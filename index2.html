@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <style>
+        .td_img {
+            width: 340px;
+            height: 660px;
+            background-size: contain;
+            position: relative;
+        }
+
+        .parking {
+            position: relative;
+            top: 0;
+            left: 0;
+        }
+    </style>
+    <meta charset="utf-8" />
+    <title>Cars clock</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+    <script src="clockCarSettings.js"></script>
+    <script type="text/javascript">
+        var cur_time = [null,null,null,null,null,null];
+        var del_cars = {};
+        var cnt_global = 0;
+        var cars = [
+        [{},{}],
+        [{},{}],
+        [{},{}],
+        [{},{}],
+        [{},{}],
+        [{},{}],
+        ];
+
+        var digit_loc = [
+        [//0
+        [[125, -10, 90, 0], [15, 110, 0], [15, 360, 0], [125, 490, 90, 1]],
+        [[220, 110, 0, 1], [220, 360, 0, 1]]
+        ],//1
+        [
+        [],
+        [[220, 110, 0, 0], [220, 360, 0, 0]]
+        ],//2
+        [
+        [[125, -10, 90, 0], [125, 240, 90, 1], [15, 360, 0], [125, 490, 90, 1]],
+        [[220, 110, 0, 1]]
+        ],//3
+        [
+        [[125, -10, 90, 0], [125, 240, 90, 1], [125, 490, 90, 2]],
+        [[220, 110, 0, 1], [220, 360, 0, 2]],
+        []
+        ],//4
+        [
+        [[15, 110, 0], [125, 240, 90, 0]],
+        [[220, 110, 0, 0], [220, 360, 0, 1]]
+        ],//5
+        [
+        [[125, -10, 90, 0], [15, 110, 0], [125, 240, 90, 0], [125, 490, 90, 1]],
+        [[220, 360, 0, 1]]
+        ],//6
+        [
+        [[125, -10, 90, 0], [15, 110, 0], [125, 240, 90, 0], [15, 360, 0], [125, 490, 90, 1]],
+        [[220, 360, 0, 1]]
+        ],//7
+        [
+        [[125, -10, 90, 0]],
+        [[220, 120, 0, 1], [220, 360, 0, 1]]
+        ],//8
+        [
+        [[125, -10, 90, 0], [15, 110, 0], [125, 240, 90, 1], [15, 360, 0], [125, 490, 90, 2]],
+        [[220, 110, 0, 1], [220, 360, 0, 2]]
+        ],//9
+        [
+        [[125, -10, 90, 0], [15, 110, 0], [125, 240, 90, 1], [125, 490, 90, 2]],
+        [[220, 110, 0, 1], [220, 360, 0, 2]]
+        ]
+        ];
+
+        function getDigits(num){
+        let d = [0, 0];
+        if (num>10){
+        d[0] = Number(String(num).charAt(0));
+        d[1] = Number(String(num).charAt(1));
+        }else{
+        d[1] = Number(String(num).charAt(0));
+        }
+        return d;
+        }
+
+        function showTime(){
+        console.log("cnt_global",cnt_global)
+        var today = new Date();
+        let h = getDigits(today.getHours());
+        let m = getDigits(today.getMinutes());
+        let s = getDigits(today.getSeconds());
+        let data = [h[0],h[1], m[0], m[1]];
+        if (test_mode){
+        cnt_global++;
+        if(cnt_global==10){cnt_global=0;}
+        data.push(s[0]);
+        data.push(cnt_global);
+        }
+        //console.log("show time", m);
+        data.forEach((digit, i)=>{
+        move_digit(i, digit);
+        });
+        if (document.visibilityState === "visible") {
+        setTimeout(showTime, ~~(1/car_speed*20000));
+        }
+        }
+        function visibilityListener() {
+        switch(document.visibilityState) {
+        case "visible":
+        location.reload();
+        break;
+        }
+        }
+
+        function del_car_move(num, digit){
+        }
+
+        function move_digit(num, digit){
+        if(cur_time[num]!=digit){
+        //del_car_move(num, digit);
+        //del_cars
+        //Object.keys().length>0){
+        let keys = Object.keys(cars[num][1]);
+        //console.log("move key", keys)
+        keys.forEach((key, index)=>{
+        //console.log("move key", key, cars[num][1][key]);
+        //console.log("!!!if(key in cars[num][0]", cars[num][0][key]);
+        cars[num][0][key] = Object.assign({}, cars[num][1][key]);
+        delete cars[num][1][key];
+        cars[num][0][key].moveOut();
+        });
+        cars[num][1] = {};
+        //$('#num_'+num).empty();
+        let milliseconds = new Date().getTime()
+        digit_loc[digit][0].forEach(function(loc, index){
+        let name = 'car_0_'+num+'_'+index+"_"+milliseconds;
+        cars[num][1][name] = add_car_move(num, name, index, loc, 15);
+        })
+        digit_loc[digit][1].forEach(function(loc, index){
+        let name = 'car_1_'+num+'_'+index+"_"+milliseconds;
+        cars[num][1][name] = add_car_move(num, name, index, loc, 220);
+        })
+        //console.log("move keys", Object.keys(cars[num][1]))
+        }
+        cur_time[num] = digit;
+        }
+
+        var Car = function(num, name, i, loc) {
+        this.name = name;
+        this.num = num;
+        this.angle = 0;
+        this.x = 0;
+        this.y = 700;
+        this.delta_y_lim = 60;
+        this.delta_x_lim = 160;
+        this.counter = 0;
+        this.loc = [...loc];
+        if (loc[2]){
+        this.loc[1] += this.delta_y_lim;
+        this.delta_a = car_speed;
+        let num = 90/this.delta_a;
+        this.delta_x = this.delta_x_lim/num;
+        this.delta_y = this.delta_y_lim/num;
+
+        }
+        //console.log("loc", this.loc);
+        if (i>0){this.counter = ~~(-i*200/car_speed)+1;}
+        this.moveIn = function () {
+        //console.log("moveIn", this.name);
+        if(this.counter==0){
+        //console.log("show", this.name, this.loc);
+        $("#"+this.name).fadeIn(car_fade_timer);
+        }
+        this.counter++;
+        let tr_move = false;
+        let tr_rotate = false;
+        let tr_cnt = true;
+        if (this.counter>0){
+        tr_cnt = false;
+        if(this.loc[1]<this.y){
+        tr_move = true;
+        this.y-=car_speed;
+        if (this.y<this.loc[1]){this.y=this.loc[1];}
+        $('#'+this.name).css({'top': this.y + 'px' });
+        }else{
+        if(this.loc[2]>0){
+        //$('#'+this.name).css({ 'left': pos.left + 'px', 'top': pos.top + 'px','transform':'rotate(90deg)'});}
+        //let transform =  $("#"+this.name).css('transform');
+        // 'left': x + 'px',
+        //console.log("this.angle", this.loc[2], this.name, this.y, this.delta_y);
+        this.x+=this.delta_x; if(this.x>this.loc[0]){this.x=this.loc[0];}
+        this.y-=this.delta_y; if(this.y<(this.loc[1]-this.delta_y_lim)){this.y=this.loc[1]-this.delta_y_lim;}
+        this.angle+=this.delta_a; if(this.angle>90){this.angle=90;this.x=this.loc[0];this.y=this.loc[1]-this.delta_y_lim;}
+        $('#'+this.name).css({'left': this.x + 'px', 'top': this.y + 'px','transform':'rotate('+this.angle+'deg)', 'transform-origin': 'center center'});
+        }
+        if(this.angle<90) {tr_rotate = true;}
+        }}
+        //console.log("res",tr_move, tr_rotate, tr_cnt);
+        if(tr_move || tr_rotate || tr_cnt){requestAnimationFrame(this.moveIn);}
+        }.bind(this);
+
+        this.moveOut = function() {
+        //console.log("!!!!out",this.name);
+        $("#"+this.name).fadeOut(car_fade_timer, function() {
+        let num = parseInt(this.getAttribute("num"));
+        let res_del = delete cars[num][0][this.id];
+        //console.log("removed 1=", num, this.id, Object.keys(cars[num][0]), $(this));
+        $(this).remove();
+        //console.log("removed 2=", res_del, this.id, cars[num][0][this.id]);
+        })}.bind(this);
+        
+        }
+
+
+        function add_car_move(num, name, index, loc=[0,0,0], startx=15){
+        var car = new Car(num, name, index, loc);
+        //console.log("loc", loc)
+        $('#num_'+num).append($('<img>',{id:car.name, num:num, src:car_img, css:{'position':'absolute','transform':'rotate(0deg)', 'display': 'none', 'left': startx+'px', 'top': '700px' }}));
+        car.moveIn();
+        return car;
+        }
+
+        $(document).ready(function () {
+        document.addEventListener("visibilitychange", visibilityListener);
+        console.log("Ready");
+        let limit = 4;
+        if(test_mode){limit=6;}
+        for (let num=0; num<limit;num++){
+        $('#clock').append($('<td>',{id:'num_'+num, class:"td_img", css:{"background":background_color}}));
+        if(num==1 || num==3){
+        $('#clock').append($('<td>',{"width":"20px"}));
+        }
+        }
+        setTimeout(showTime, 1000);
+        });
+    </script>
+</head>
+<body>
+    <!--<img id="settings" +id src="settings.png"  />-->
+    <table style="table-layout:fixed; width:256px;">
+        <tr id="clock"></tr>
+    </table>
+
+</body>
+</html>

@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <style>
+        .td_img {
+            width: 340px;
+            height: 660px;
+            background-size: contain;
+            position: relative;
+            background: Black;
+            /* background:"parking.png" */
+        }
+        .parking {
+            position: relative;
+            top: 0;
+            left: 0;
+        }
+    </style>
+    <meta charset="utf-8" />
+    <title>Cars clock</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+    <script src="cars.js"></script>
+    <script type="text/javascript">
+        //var car_img = "sedan_red_100.png";
+        var car_img = "universal_white_100.png";
+        var car_fade_timer = 500;
+
+        var cur_time = [null,null,null,null,null,null];
+
+        var digit_loc = [
+        [
+        [120, -10, 90], [120, 490,90],
+        [220,110,0], [220,360,0],
+        [15,110,0], [15,360,0]
+        ],
+        [[220,110,0], [220,360,0]],
+        [
+        [120, -10, 90], [120,240,90], [120,490,90],
+        [220,110,0], [20,360,0]
+        ],
+        [   
+        [120, -10, 90], [120,240,90], [120,490,90],
+        [220,110,0], [220,360,0],
+        ],
+        [
+        [120,240,90],
+        [220,110,0], [220,360,0],
+        [15,110,0]
+        ],
+        [
+        [120, -10, 90], [120,240,90], [120,490,90],
+        [220,360,0], [15,110,0]
+        ],
+        [
+        [120, -10, 90], [120,240,90], [120,490,90],
+        [220,360,0],
+        [15,110,0], [20,360,0]
+        ],
+        [[120, -10, 90],[220,120,0], [220,360,0]],
+        [
+        [120, -10, 90], [120,240,90], [120,490,90],
+        [220,110,0], [220,360,0],
+        [15,110,0], [15,360,0]
+        ],
+        [
+        [120, -10, 90], [120,240,90], [120,490,90],
+        [220,110,0], [220,360,0],
+        [15,110,0]
+
+        ],
+        ];
+
+        function getDigits(num){
+        let d = [0, 0];
+        if (num>10){
+        d[0] = Number(String(num).charAt(0));
+        d[1] = Number(String(num).charAt(1));
+        }else{
+        d[1] = Number(String(num).charAt(0));
+        }
+        return d;
+        }
+
+        function showTime(){
+        const today = new Date();
+        let h = getDigits(today.getHours());
+        let m = getDigits(today.getMinutes());
+        let s = getDigits(today.getSeconds());
+        set_digit(1, h[0]);
+        set_digit(2, h[1]);
+        set_digit(3, m[0]);
+        set_digit(4, m[1]);
+        set_digit(5, s[0]);
+        set_digit(6, s[1]);
+        setTimeout(showTime, 1000);
+        }
+
+        function set_digit(num, digit){
+        if(cur_time[num]!=digit){
+        $('#num_'+num).empty();
+        digit_loc[digit].forEach(function(loc, index){
+        add_car(num, index, loc);
+        })
+        }
+        cur_time[num] = digit;
+        }
+
+        function add_car(num, id, loc=[0,0], rot=0){
+        $('#num_'+num).append($('<img>',{id:'car_'+num+'_'+id, src:car_img, css:{'position':'absolute','transform':'rotate('+loc[2]+'deg)', 'display': 'none', 'left': loc[0] + 'px', 'top': loc[1] + 'px' }}));
+        $('#car_'+num+'_'+id).fadeIn(car_fade_timer);
+
+        }
+
+        function carMoveAnimate(num, carId) {
+        let prev = performance.now();
+        let times = 0;
+        requestAnimationFrame(function measure(time) {
+        let delat = Math.floor(time - prev);
+        var pos = $("#"+carId).position();
+        let y = pos.top + 1;
+        let x = pos.left;
+        $('#'+carId).css({ 'left': x + 'px', 'top': y + 'px' });
+        prev = time;
+        if (times++ < 100) requestAnimationFrame(measure);
+        });
+        }
+
+        $(document).ready(function () {
+        console.log("Ready");
+        setTimeout(showTime, 1000);
+        //setInterval(showTime, 1000);
+        });
+    </script>
+</head>
+<body>
+    <!--<img id="settings" +id src="settings.png"  />-->
+    <table style="table-layout:fixed; width:256px;">
+        <tr>
+            <td id="num_1" class="td_img"></td>
+            <td id="num_2" class="td_img"></td>
+            <td style="width:20px"></td>
+            <td id="num_3" class="td_img"></td>
+            <td id="num_4" class="td_img"></td>
+            <td style="width:20px"></td>
+            <td id="num_5" class="td_img"></td>
+            <td id="num_6" class="td_img"></td>
+        </tr>
+    </table>
+
+</body>
+</html>
